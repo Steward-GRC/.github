@@ -29,11 +29,9 @@ commit() {
   git -C "$work/repo" rev-parse HEAD
 }
 
+# Commits use the ambient git identity: the repo is local-only scratch,
+# deleted on exit and never pushed.
 git init -q -b main "$work/repo"
-git -C "$work/repo" config user.name "Alice Example"
-git -C "$work/repo" config user.email "alice@example.org"
-git -C "$work/repo" config commit.gpgsign false
-git -C "$work/repo" config core.hooksPath /dev/null
 
 root="$(commit "chore: root" -s)"
 signed="$(commit "feat: signed" -s)"
