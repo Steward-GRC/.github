@@ -7,6 +7,7 @@ calls them from its own `checks.yml`.
 |---|---|
 | `go.yml` | Go build and test: generated code current, buf lint and breaking, gofmt, go mod tidy, build, vet, test |
 | `dco.yml` | the DCO sign-off on every commit (`dco-check.sh`) |
+| `secrets.yml` | a gitleaks scan for committed credentials and keys, with gitleaks' default secret rules only |
 | `proto-sync.yml` | the callee proto pin checks on PRs, and the scheduled pin refresh (`pin-check.sh`, `gomod-guard.sh`, `proto-sync.sh`) |
 
 Every job runs on GitHub-hosted runners, has a timeout, and installs its tools at pinned versions:
@@ -24,6 +25,8 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
   merge_group:
+  push:
+    branches: [main]
   schedule:
     - cron: "23 10 * * 1-5"
   workflow_dispatch:
@@ -37,13 +40,17 @@ concurrency:
 
 jobs:
   checks:
-    if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' && github.event.pull_request.draft != true
+    if: github.event_name != 'push' && github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' && github.event.pull_request.draft != true
     uses: Steward-GRC/.github/.github/workflows/go.yml@main
     with:
       setup-script: scripts/ci-services.sh
   dco:
-    if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' && github.event.pull_request.draft != true
+    if: github.event_name != 'push' && github.event_name != 'schedule' && github.event_name != 'workflow_dispatch' && github.event.pull_request.draft != true
     uses: Steward-GRC/.github/.github/workflows/dco.yml@main
+  secrets:
+    permissions:
+      contents: read
+    uses: Steward-GRC/.github/.github/workflows/secrets.yml@main
   proto-sync:
     if: github.event_name == 'pull_request' && github.event.pull_request.draft != true
     permissions:
@@ -62,6 +69,8 @@ jobs:
   as a test DSN, to `$GITHUB_ENV`.
 - Drop the `proto-sync` and `proto-refresh` jobs, and the schedule, in a repo that calls no other
   service.
+- Keep the job id `secrets`: its required status check is `secrets / Secrets`. It takes no inputs
+  and skips draft PRs itself. The `push` trigger on `main` is what gives it the full-history scan.
 - Pin `@main` to a commit SHA (and `tools-ref` to the same SHA) when a repo needs to hold still
   while this repo changes.
 
@@ -81,18 +90,40 @@ and touch no network:
 
 ```bash
 bash .github/scripts/dco-check_test.sh
+bash .github/scripts/secrets_test.sh
 bash .github/scripts/pin-check_test.sh
 bash .github/scripts/gomod-guard_test.sh
 bash .github/scripts/proto-sync_test.sh
 ```
 
-This repo's own `checks.yml` runs actionlint and all four self-tests on every PR.
+This repo's own `checks.yml` runs actionlint and all five self-tests on every PR, and calls
+`secrets.yml` on PRs, merge groups and pushes to `main`.
 
 # DCO
 
 `dco-check.sh <base> <head>` fails when any non-merge commit in `base..head` has no
 `Signed-off-by: Name <email>` trailer. Merge commits are skipped. See
 [CONTRIBUTING.md](../CONTRIBUTING.md) for how to sign off.
+
+# Secrets
+
+`secrets.yml` runs gitleaks, pinned to an exact version whose download is checked against the
+SHA-256 in that release's checksums file:
+
+- on `pull_request` it scans only the PR's own commits (`base..head`), and on `merge_group` only the
+  group's, so a bad commit on some other branch never blocks every PR;
+- on `push` (and any other event, such as a schedule) it scans the full history of the checked-out
+  ref.
+
+It runs gitleaks' built-in secret rules and nothing else: the scan always uses a config that only
+extends the defaults, so a repo's own `.gitleaks.toml` can't add rules. Allow a false positive with a
+`gitleaks:allow` comment on the line, or its fingerprint in the repo's `.gitleaksignore`. Findings are
+redacted in the log.
+
+`secrets_test.sh` runs the workflow's own scan step against throwaway repos: a range adding a fake
+key fails, a clean range passes, a key on another branch doesn't fail a clean PR, and a push scans
+the whole history. It builds its fake key at run time, so nothing committed here matches a secret
+rule. It needs gitleaks at the pinned version on the `PATH`.
 
 # Proto sync
 
