@@ -1,32 +1,27 @@
-# Steward 🧭
+# Steward-GRC 🧭
 
-> 📜 Open-source policy, procedure and compliance management, built as small cloud-native services.
+> 📜 Open-source policy, procedure and compliance management, built as a set of small services.
 
-Steward keeps an organisation's policies and procedures in one place: authored together,
-approved through workflows, acknowledged by the people they apply to, and backed by a
-tamper-evident audit trail. It runs on any Kubernetes cluster, or as a self-contained
-appliance.
+Steward-GRC is an open-source, Apache-2.0 licensed policy and compliance management
+system. It keeps an organisation's policies and procedures in one place, takes them
+through multi-stage approval workflows, tracks who has read and acknowledged them, and
+backs every change with a hash-chained, independently verifiable audit trail. It's
+built as a set of small services rather than one monolith, with per-category access
+rules, single sign-on and second factors, and runs on any Kubernetes cluster.
 
-## ✨ Highlights
+🏠 **Home:** [steward-grc.com](https://steward-grc.com)
 
-- 📝 **Authoring:** policies, procedures and templates with versions, co-editing and AI
-  drafting help.
-- ✅ **Approvals:** multi-stage workflows with individual and group approvals, quorum and
-  due dates.
-- 🙋 **Acknowledgements:** proof of reading, completion reports and reminders.
-- 🔐 **Access:** per-category access rules, single sign-on and second factors.
-- 🧾 **Audit:** a hash-chained, independently verifiable audit trail.
+## 🧩 Services
 
-## 📦 Repositories
+- [steward-core](https://github.com/Steward-GRC/steward-core): categories, templates, policies, versions and sensitivity.
+- [steward-workflow](https://github.com/Steward-GRC/steward-workflow): approval stages, quorum, group approvals, reassignment, bulk decisions and due dates.
+- [steward-obligations](https://github.com/Steward-GRC/steward-obligations): obligations, acknowledgements, completion reports and notifications.
 
-- [steward-core](https://github.com/Steward-GRC/steward-core): the core service: categories, templates, policies, versions and sensitivity.
+## 🔐 Identity, access and audit
+
+- [steward-identity](https://github.com/Steward-GRC/steward-identity): users, groups, roles, sign-in factors and SSO connections.
 - [steward-authz](https://github.com/Steward-GRC/steward-authz): the access-rule engine and permission catalog shared by the Steward services.
 - [steward-audit](https://github.com/Steward-GRC/steward-audit): the tamper-evident, hash-chained audit service.
-
-## 🚧 Status
-
-Steward is being built towards its first release, v0.1.0. More repositories open up here
-as they're ready.
 
 ## 🤝 Contributing
 
