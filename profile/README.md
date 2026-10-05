@@ -16,6 +16,9 @@ rules, single sign-on and second factors, and runs on any Kubernetes cluster.
 - [steward-core](https://github.com/Steward-GRC/steward-core): categories, templates, policies, versions and sensitivity.
 - [steward-workflow](https://github.com/Steward-GRC/steward-workflow): approval stages, quorum, group approvals, reassignment, bulk decisions and due dates.
 - [steward-obligations](https://github.com/Steward-GRC/steward-obligations): obligations, acknowledgements, completion reports and notifications.
+- [steward-delivery](https://github.com/Steward-GRC/steward-delivery): server-side rendering, version diffs, shared read-only links and PDF export requests.
+- [steward-pdf-renderer](https://github.com/Steward-GRC/steward-pdf-renderer): the PDF render operator, with a PdfRender resource and a headless Chromium job per render.
+- [steward-collab](https://github.com/Steward-GRC/steward-collab): live co-editing of drafts, co-editing tokens and snapshot flush.
 
 ## 🔐 Identity, access and audit
 
