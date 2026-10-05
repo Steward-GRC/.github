@@ -21,6 +21,8 @@ rules, single sign-on and second factors, and runs on any Kubernetes cluster.
 - [steward-collab](https://github.com/Steward-GRC/steward-collab): live co-editing of drafts, co-editing tokens and snapshot flush.
 - [steward-reporting](https://github.com/Steward-GRC/steward-reporting): anonymous and named compliance reports, officer case work, breach assessment and notification deadlines.
 - [steward-ai](https://github.com/Steward-GRC/steward-ai): cited answers, drafting, review and summaries behind one provider interface.
+- [steward-gateway](https://github.com/Steward-GRC/steward-gateway): the GraphQL edge for the browser, with sessions, sign-in, first-run setup, the co-editing proxy and document extract.
+- [steward-web](https://github.com/Steward-GRC/steward-web): the staff and admin web apps, the docs guide and the UI kit.
 
 ## 🔐 Identity, access and audit
 
