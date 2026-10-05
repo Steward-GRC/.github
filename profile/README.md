@@ -19,6 +19,8 @@ rules, single sign-on and second factors, and runs on any Kubernetes cluster.
 - [steward-delivery](https://github.com/Steward-GRC/steward-delivery): server-side rendering, version diffs, shared read-only links and PDF export requests.
 - [steward-pdf-renderer](https://github.com/Steward-GRC/steward-pdf-renderer): the PDF render operator, with a PdfRender resource and a headless Chromium job per render.
 - [steward-collab](https://github.com/Steward-GRC/steward-collab): live co-editing of drafts, co-editing tokens and snapshot flush.
+- [steward-reporting](https://github.com/Steward-GRC/steward-reporting): anonymous and named compliance reports, officer case work, breach assessment and notification deadlines.
+- [steward-ai](https://github.com/Steward-GRC/steward-ai): cited answers, drafting, review and summaries behind one provider interface.
 
 ## 🔐 Identity, access and audit
 
