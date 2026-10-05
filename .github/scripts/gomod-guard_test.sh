@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Self-test for gomod-guard.sh against go.mod fixtures. Touches no network.
+# Self-test for gomod-guard.sh against go.mod fixtures. It touches no network:
+# a fake gh on PATH answers the compare calls the way the GitHub API does.
 #
 # Run from anywhere:
 #   bash .github/scripts/gomod-guard_test.sh
@@ -44,6 +45,31 @@ run() {
   sed 's/^/    | /' "$2" >&2
   echo "$rc"
 }
+
+on_main=0123456789ab
+tip=abcdefabcdef
+pr_head=fedcbafedcba
+
+# The fake gh answers `gh api repos/<org>/<repo>/compare/<sha>...main?per_page=1 --jq .status`
+# and 404s on anything else, as the API does for an unknown repo or commit.
+fake="$work/bin"
+mkdir -p "$fake"
+{
+  echo '#!/usr/bin/env bash'
+  echo '[[ "$1" == api ]] || exit 9'
+  echo 'case "$2" in'
+  echo "  repos/Steward-GRC/steward-authz/compare/$on_main...main?per_page=1) echo ahead ;;"
+  echo "  repos/Steward-GRC/steward-core/compare/$tip...main?per_page=1) echo identical ;;"
+  echo "  repos/Steward-GRC/steward-audit/compare/$pr_head...main?per_page=1) echo diverged ;;"
+  echo '  *)'
+  echo "    echo '{\"message\":\"Not Found\",\"status\":\"404\"}'"
+  echo '    echo "gh: Not Found (HTTP 404)" >&2'
+  echo '    exit 1'
+  echo '    ;;'
+  echo 'esac'
+} >"$fake/gh"
+chmod +x "$fake/gh"
+export PATH="$fake:$PATH"
 
 # A clean go.mod: tagged owner packages, and third-party pseudo-versions,
 # which the guard leaves alone.
@@ -105,6 +131,69 @@ expect_contains "a one-line replace fails" \
   "::error file=go.mod,line=15::replace directive: github.com/Bugs5382/go-redis => ../go-redis" "$work/dirty.log"
 expect_contains "a replace in a block fails" \
   "::error file=go.mod,line=18::replace directive: github.com/Bugs5382/go-postgres v1.2.2 => github.com/someone/go-postgres v1.2.3" "$work/dirty.log"
+
+# Steward-GRC modules may sit at a pseudo-version of a commit on their repo's
+# main while in development; Bugs5382 modules never may.
+mkdir -p "$work/dev"
+cat >"$work/dev/go.mod" <<GOMOD
+module github.com/Steward-GRC/steward-fixture
+
+go 1.26.6
+
+require (
+	github.com/Steward-GRC/steward-authz v0.0.0-20261005120000-$on_main
+	github.com/Steward-GRC/steward-core/v2 v2.0.0-20261005120000-$tip // indirect
+	github.com/Steward-GRC/steward-release v0.1.0
+	github.com/Bugs5382/go-apperr v1.1.0
+)
+GOMOD
+rc="$(run "$work/dev" "$work/dev.log")"
+expect_exit "Steward-GRC pseudo-versions on main pass" 0 "$rc"
+expect_contains "a commit main has moved past is on main" \
+  "github.com/Steward-GRC/steward-authz v0.0.0-20261005120000-$on_main: Steward-GRC/steward-authz $on_main is on main (ahead)" "$work/dev.log"
+expect_contains "main's tip is on main, a /vN module too" \
+  "github.com/Steward-GRC/steward-core/v2 v2.0.0-20261005120000-$tip: Steward-GRC/steward-core $tip is on main (identical)" "$work/dev.log"
+expect_contains "the summary names commits on main" \
+  "go.mod: no replace directives, owner packages at tagged releases or Steward-GRC commits on main" "$work/dev.log"
+
+mkdir -p "$work/offmain"
+cat >"$work/offmain/go.mod" <<GOMOD
+module github.com/Steward-GRC/steward-fixture
+
+go 1.26.6
+
+require (
+	github.com/Steward-GRC/steward-audit v0.1.1-0.20261005120000-$pr_head
+	github.com/Steward-GRC/steward-nosuch v0.0.0-20261005120000-$on_main
+	github.com/Steward-GRC/steward-authz v0.0.0-20261005120000-$on_main
+	github.com/Bugs5382/go-log v0.0.0-20261005120000-$on_main
+	github.com/Bugs5382/go-apperr v1.1.0
+	github.com/Steward-GRC/steward-shortsha v0.0.0-20261005120000-0123456
+	github.com/Steward-GRC/steward-shorttime v0.0.0-20261005-$on_main
+	github.com/Bugs5382/go-upper v0.0.0-20261005120000-0123456789AB
+	github.com/Steward-GRC/steward-branch main
+	golang.org/x/exp v0.0.0-20261005-junk
+)
+GOMOD
+rc="$(run "$work/offmain" "$work/offmain.log")"
+expect_exit "owner pseudo-versions off main fail" 1 "$rc"
+expect_contains "a Steward-GRC commit off main fails" \
+  "::error file=go.mod,line=6::github.com/Steward-GRC/steward-audit is at a pseudo-version (v0.1.1-0.20261005120000-$pr_head) whose commit isn't reachable from Steward-GRC/steward-audit main (compare status: diverged)." "$work/offmain.log"
+expect_contains "an unknown Steward-GRC repo or commit fails" \
+  "::error file=go.mod,line=7::github.com/Steward-GRC/steward-nosuch is at a pseudo-version (v0.0.0-20261005120000-$on_main): Steward-GRC/steward-nosuch has no commit $on_main (compare returned 404)." "$work/offmain.log"
+expect_not_contains "a Steward-GRC commit on main isn't flagged" "::error file=go.mod,line=8::" "$work/offmain.log"
+expect_contains "a Bugs5382 pseudo-version fails, on main or not" \
+  "::error file=go.mod,line=9::github.com/Bugs5382/go-log is at a pseudo-version (v0.0.0-20261005120000-$on_main). Require a tagged release" "$work/offmain.log"
+expect_not_contains "a Bugs5382 tag isn't flagged" "::error file=go.mod,line=10::" "$work/offmain.log"
+expect_contains "a pseudo-version with a short commit fails" \
+  "::error file=go.mod,line=11::github.com/Steward-GRC/steward-shortsha is at a malformed version (v0.0.0-20261005120000-0123456)" "$work/offmain.log"
+expect_contains "a pseudo-version with a short timestamp fails" \
+  "::error file=go.mod,line=12::github.com/Steward-GRC/steward-shorttime is at a malformed version (v0.0.0-20261005-$on_main)" "$work/offmain.log"
+expect_contains "a pseudo-version with an upper-case commit fails" \
+  "::error file=go.mod,line=13::github.com/Bugs5382/go-upper is at a malformed version (v0.0.0-20261005120000-0123456789AB)" "$work/offmain.log"
+expect_contains "a branch name fails" \
+  "::error file=go.mod,line=14::github.com/Steward-GRC/steward-branch is at a malformed version (main)" "$work/offmain.log"
+expect_not_contains "a third-party version is left alone" "golang.org/x/exp" "$work/offmain.log"
 
 # A nested module is checked too; hidden directories (fetched protos, the
 # workflow's tools checkout) are not.
