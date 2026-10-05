@@ -33,10 +33,12 @@
 #     from the owner's main (status ahead or identical), and fails otherwise,
 #     a 404 included. A squash-merged PR head keeps resolving on codeload until
 #     GitHub drops it, so a pin off main breaks silently later;
-#   - gomod-guard.sh fails on any replace directive in a go.mod, and on any
-#     github.com/Bugs5382/* or github.com/Steward-GRC/* requirement at a
-#     pseudo-version. Only tagged releases are committed; a local package
-#     checkout is linked with a git-ignored go.work.
+#   - gomod-guard.sh fails on any replace directive in a go.mod, on any
+#     github.com/Bugs5382/* requirement at a pseudo-version, and on any
+#     github.com/Steward-GRC/* requirement at a pseudo-version whose commit
+#     isn't on its repo's main (asked of the compare API as pin-check.sh
+#     does). Tags come at release; a local package checkout is linked with a
+#     git-ignored go.work.
 # Then, for each pin, proto-sync.sh:
 #   - fails if the pinned commit isn't on the owner's main;
 #   - runs buf breaking of the owner's main against the pinned commit, and
@@ -102,8 +104,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: bash "$TOOLS/.github/scripts/pin-check.sh"
 
-      - name: Check go.mod uses tagged releases only
+      - name: Check go.mod uses tagged releases or commits on main
         if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: bash "$TOOLS/.github/scripts/gomod-guard.sh"
 
       - name: Install buf

@@ -85,7 +85,8 @@ bash <this repo>/.github/scripts/proto-sync.sh refresh
 ```
 
 The proto-sync scripts run from the root of the calling repo, with `buf` on the `PATH`;
-`pin-check.sh` also needs `gh`, signed in or with `GH_TOKEN` set. The self-tests run from anywhere
+`pin-check.sh`, and `gomod-guard.sh` when a Steward-GRC module is at a pseudo-version, also need
+`gh`, signed in or with `GH_TOKEN` set. The self-tests run from anywhere
 and touch no network:
 
 ```bash
@@ -141,10 +142,22 @@ The `check` job (on a PR) runs two guards first, in every calling repo, with or 
   or `identical` passes; `behind`, `diverged` and a 404 (no such repo or commit) fail. A
   squash-merged PR head still resolves on codeload until GitHub drops it, so a pin off `main`
   works for a while and then breaks with no warning. Pin the owner's merge commit instead.
-- **gomod-guard.sh** fails when any `go.mod` below the root (hidden directories and `vendor/`
-  aside) has a `replace` directive, or requires a `github.com/Bugs5382/*` or
-  `github.com/Steward-GRC/*` module at a pseudo-version (`v0.0.0-<timestamp>-<commit>`,
-  `vX.Y.Z-0.<timestamp>-<commit>` and the pre-release form). Only tagged releases are committed.
+- **gomod-guard.sh** checks every `go.mod` below the root (hidden directories and `vendor/`
+  aside). It fails on:
+  - a `replace` directive;
+  - a `github.com/Bugs5382/*` module at a pseudo-version (`v0.0.0-<timestamp>-<commit>`,
+    `vX.Y.Z-0.<timestamp>-<commit>` and the pre-release form). Bugs5382 modules use real tags only;
+  - a `github.com/Steward-GRC/*` module at a pseudo-version whose commit isn't on its repo's
+    `main`. While the org's own modules are in development, a service may require one at a
+    pseudo-version of a commit on `main`; real tags (`v0.1.0` and on) come at release, and a tagged
+    version always passes. The commit is checked the way `pin-check.sh` checks a pin:
+    `repos/Steward-GRC/<repo>/compare/<commit>...main` passes on `ahead` or `identical`, and
+    `behind`, `diverged` or a 404 fails. Require the owner's merge commit, never a PR head;
+  - an owner module at anything that isn't a semver tag: a malformed pseudo-version (short
+    commit or timestamp, upper-case hex) or a branch name.
+
+  Third-party modules are left alone. The guard needs `gh` (signed in, or `GH_TOKEN`) only when a
+  Steward-GRC module is at a pseudo-version.
 
 To build and test against a local checkout of a package, use a git-ignored `go.work` beside the
 service's `go.mod` instead (`go work init . ../go-<pkg>`, or `use . ../go-<pkg>` in the file).
