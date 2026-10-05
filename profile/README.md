@@ -17,10 +17,16 @@ appliance.
 - 🔐 **Access:** per-category access rules, single sign-on and second factors.
 - 🧾 **Audit:** a hash-chained, independently verifiable audit trail.
 
+## 📦 Repositories
+
+- [steward-core](https://github.com/Steward-GRC/steward-core): the core service: categories, templates, policies, versions and sensitivity.
+- [steward-authz](https://github.com/Steward-GRC/steward-authz): the access-rule engine and permission catalog shared by the Steward services.
+- [steward-audit](https://github.com/Steward-GRC/steward-audit): the tamper-evident, hash-chained audit service.
+
 ## 🚧 Status
 
-Steward is being built towards its first release, v0.1.0. Repositories open up here as
-they're ready.
+Steward is being built towards its first release, v0.1.0. More repositories open up here
+as they're ready.
 
 ## 🤝 Contributing
 
