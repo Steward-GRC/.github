@@ -9,6 +9,7 @@ calls them from its own `checks.yml`.
 | `dco.yml` | the DCO sign-off on every commit (`dco-check.sh`) |
 | `secrets.yml` | a gitleaks scan for committed credentials and keys, with gitleaks' default secret rules only |
 | `proto-sync.yml` | the callee proto pin checks on PRs, and the scheduled pin refresh (`pin-check.sh`, `gomod-guard.sh`, `proto-sync.sh`) |
+| `quality.yml` | opt-in, advisory only: golangci-lint, gosec, govulncheck and modernize on PRs (`quality-report.sh`) |
 
 Every job runs on GitHub-hosted runners, has a timeout, and installs its tools at pinned versions:
 actions by commit SHA, binaries checked against their SHA-256, Go tools through the Go checksum
@@ -71,6 +72,8 @@ jobs:
   service.
 - Keep the job id `secrets`: its required status check is `secrets / Secrets`. It takes no inputs
   and skips draft PRs itself. The `push` trigger on `main` is what gives it the full-history scan.
+- Add the advisory `quality` job, described under [Quality](#quality), to see lint, SAST,
+  vulnerability and modernize findings on a PR. It's opt-in and never required.
 - Pin `@main` to a commit SHA (and `tools-ref` to the same SHA) when a repo needs to hold still
   while this repo changes.
 
@@ -95,9 +98,10 @@ bash .github/scripts/secrets_test.sh
 bash .github/scripts/pin-check_test.sh
 bash .github/scripts/gomod-guard_test.sh
 bash .github/scripts/proto-sync_test.sh
+bash .github/scripts/quality-report_test.sh
 ```
 
-This repo's own `checks.yml` runs actionlint and all five self-tests on every PR, and calls
+This repo's own `checks.yml` runs actionlint and all six self-tests on every PR, and calls
 `secrets.yml` on PRs, merge groups and pushes to `main`.
 
 # DCO
@@ -125,6 +129,54 @@ redacted in the log.
 key fails, a clean range passes, a key on another branch doesn't fail a clean PR, and a push scans
 the whole history. It builds its fake key at run time, so nothing committed here matches a secret
 rule. It needs gitleaks at the pinned version on the `PATH`.
+
+# Quality
+
+`quality.yml` runs the heavy Go gates on a PR as **advisory** checks: their findings show on the PR
+while it's under review, and they never fail it or block its merge. A repo opts in by adding one job
+to its `checks.yml`:
+
+```yaml
+jobs:
+  quality:
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft != true
+    permissions:
+      contents: read
+    uses: Steward-GRC/.github/.github/workflows/quality.yml@main
+```
+
+It takes two optional inputs: `timeout-minutes` (each job's timeout, default 15) and `tools-ref`
+(the ref of this repo to take `quality-report.sh` from, default `main`). Each tool runs in its own
+job, side by side:
+
+| Check | Tool |
+|---|---|
+| `quality / Lint (advisory)` | golangci-lint, with the repo's `.golangci.yml` when there is one |
+| `quality / SAST (advisory)` | gosec, generated files skipped |
+| `quality / Vulnerabilities (advisory)` | govulncheck: known vulnerabilities the code reaches in its dependencies |
+| `quality / Modernize (advisory)` | the Go `modernize` analyzer, test files included |
+
+The tool step continues on error, so findings never fail the job. `quality-report.sh` turns the
+tool's output into warning annotations on the diff (the first 50) and a section of the job summary
+with the full output and the count. Each job continues on error too, so even a failed install
+leaves the caller's run green; the summary then says the tool didn't run. Never add these checks
+to a ruleset's required status checks: they report, and fixing a finding is the author's call.
+
+golangci-lint and gosec are release binaries checked against their SHA-256; govulncheck and
+modernize come through `go install` and the Go checksum database. setup-go caches the module and
+build caches, and the lint job also caches golangci-lint's own analysis cache.
+
+Run the same tools locally from a repo's root:
+
+```bash
+golangci-lint run ./...
+gosec -exclude-generated ./...
+govulncheck ./...
+modernize -test ./...
+```
+
+`quality-report_test.sh` feeds canned tool output to `quality-report.sh` and checks the
+annotations and summary it writes. It needs none of the tools.
 
 # Proto sync
 
