@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/steward-mark-dark.svg">
+    <img src="assets/steward-mark-light.svg" alt="Steward mark" width="96">
+  </picture>
+</p>
+
 # Steward-GRC 🧭
 
 > 📜 Open-source policy, procedure and compliance management, built as a set of small services.
