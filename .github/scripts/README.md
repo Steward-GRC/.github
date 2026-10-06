@@ -7,7 +7,7 @@ calls them from its own `checks.yml`.
 |---|---|
 | `go.yml` | Go build and test: generated code current, buf lint and breaking, gofmt, go mod tidy, build, vet, test |
 | `dco.yml` | the DCO sign-off on every commit (`dco-check.sh`) |
-| `secrets.yml` | a gitleaks scan for committed credentials and keys, with gitleaks' default secret rules only |
+| `secrets.yml` | a gitleaks scan for committed credentials and keys, with gitleaks' default secret rules only, and a scan of tracked images, icons, PDFs and SVGs for embedded provenance metadata (C2PA/JUMBF) |
 | `proto-sync.yml` | the callee proto pin checks on PRs, and the scheduled pin refresh (`pin-check.sh`, `gomod-guard.sh`, `proto-sync.sh`) |
 | `quality.yml` | opt-in, advisory only: golangci-lint, gosec, govulncheck and modernize on PRs (`quality-report.sh`) |
 
