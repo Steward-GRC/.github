@@ -45,6 +45,10 @@ rules, single sign-on and second factors, and runs on any Kubernetes cluster.
 - [Support](https://github.com/Steward-GRC/.github/blob/main/.github/SUPPORT.md)
 - [Governance](https://github.com/Steward-GRC/.github/blob/main/GOVERNANCE.md) and [maintainers](https://github.com/Steward-GRC/.github/blob/main/MAINTAINERS.md)
 
+## 🙏 Acknowledgements
+
+Steward was originally written by [@Bugs5382](https://github.com/Bugs5382).
+
 ## 📄 Licence
 
 [Apache-2.0](https://github.com/Steward-GRC/.github/blob/main/LICENSE).
