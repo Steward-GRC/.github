@@ -34,12 +34,18 @@ rules, single sign-on and second factors, and runs on any Kubernetes cluster.
 - [steward-ai](https://github.com/Steward-GRC/steward-ai): cited answers, drafting, review and summaries behind one provider interface.
 - [steward-gateway](https://github.com/Steward-GRC/steward-gateway): the GraphQL edge for the browser, with sessions, sign-in, first-run setup, the co-editing proxy and document extract.
 - [steward-web](https://github.com/Steward-GRC/steward-web): the staff and admin web apps, the docs guide and the UI kit.
+- [steward-appliance](https://github.com/Steward-GRC/steward-appliance): the single-node k0s OS image, build kit and upgrades.
 
 ## 🔐 Identity, access and audit
 
 - [steward-identity](https://github.com/Steward-GRC/steward-identity): users, groups, roles, sign-in factors and SSO connections.
 - [steward-authz](https://github.com/Steward-GRC/steward-authz): the access-rule engine and permission catalog shared by the Steward services.
 - [steward-audit](https://github.com/Steward-GRC/steward-audit): the tamper-evident, hash-chained audit service.
+
+## 📱 Native apps
+
+- [steward-android](https://github.com/Steward-GRC/steward-android): the native Android app, in Kotlin and Jetpack Compose.
+- [steward-ios](https://github.com/Steward-GRC/steward-ios): the native iOS app, in Swift and SwiftUI.
 
 ## 🤝 Contributing
 
