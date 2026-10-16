@@ -18,6 +18,10 @@ rules, single sign-on and second factors, and runs on any Kubernetes cluster.
 
 🏠 **Home:** [steward-grc.com](https://steward-grc.com)
 
+## 🌐 Site
+
+- [website](https://github.com/Steward-GRC/website): the public product site.
+
 ## 🧩 Services
 
 - [steward-core](https://github.com/Steward-GRC/steward-core): categories, templates, policies, versions and sensitivity.
