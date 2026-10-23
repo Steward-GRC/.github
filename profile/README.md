@@ -22,6 +22,14 @@ rules, single sign-on and second factors, and runs on any Kubernetes cluster.
 
 - [website](https://github.com/Steward-GRC/website): the public product site.
 
+## 📚 Docs
+
+- [docs](https://github.com/Steward-GRC/docs): the source of the Steward documentation site.
+
+## 📦 Release
+
+- [steward-release](https://github.com/Steward-GRC/steward-release): the Helm charts for a self-hosted install on any Kubernetes cluster, with the pinned release manifest and the migration tool.
+
 ## 🧩 Services
 
 - [steward-core](https://github.com/Steward-GRC/steward-core): categories, templates, policies, versions and sensitivity.
