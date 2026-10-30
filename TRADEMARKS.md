@@ -1,7 +1,7 @@
 # Trademarks
 
 Steward-GRC™ and the Steward-GRC logo are unregistered (common-law) trademarks of
-the rabbit hole tech, llc. They're not registered yet, which is why you'll see ™ rather than ®. Applications
+the Steward-GRC project. They're not registered yet, which is why you'll see ™ rather than ®. Applications
 to register them are being prepared, so full registered protection is pending;
 common-law rights already apply from first use.
 
