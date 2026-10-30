@@ -67,4 +67,4 @@ Steward was originally written by [@Bugs5382](https://github.com/Bugs5382).
 
 ## ™️ Trademarks
 
-Steward-GRC™ and the Steward-GRC logo are trademarks of the rabbit hole tech, llc. The code is licensed under Apache-2.0; the licence does not grant rights to the names or logos. See [TRADEMARKS.md](https://github.com/Steward-GRC/.github/blob/main/TRADEMARKS.md) for the usage policy. Applications to register these trademarks are being prepared; full registered (®) protection is pending until they are granted.
+Steward-GRC™ and the Steward-GRC logo are trademarks of the Steward-GRC project. The code is licensed under Apache-2.0; the licence does not grant rights to the names or logos. See [TRADEMARKS.md](https://github.com/Steward-GRC/.github/blob/main/TRADEMARKS.md) for the usage policy. Applications to register these trademarks are being prepared; full registered (®) protection is pending until they are granted.
