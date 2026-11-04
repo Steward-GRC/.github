@@ -26,9 +26,10 @@ rules, single sign-on and second factors, and runs on any Kubernetes cluster.
 
 - [docs](https://github.com/Steward-GRC/docs): the source of the Steward documentation site.
 
-## 📦 Release
+## 📦 Release and appliance
 
 - [steward-release](https://github.com/Steward-GRC/steward-release): the Helm charts for a self-hosted install on any Kubernetes cluster, with the pinned release manifest and the migration tool.
+- [steward-appliance](https://github.com/Steward-GRC/steward-appliance): the single-node k0s appliance OS image, with its build kit and upgrades.
 
 ## 🧩 Services
 
@@ -48,6 +49,11 @@ rules, single sign-on and second factors, and runs on any Kubernetes cluster.
 - [steward-identity](https://github.com/Steward-GRC/steward-identity): users, groups, roles, sign-in factors and SSO connections.
 - [steward-authz](https://github.com/Steward-GRC/steward-authz): the access-rule engine and permission catalog shared by the Steward services.
 - [steward-audit](https://github.com/Steward-GRC/steward-audit): the tamper-evident, hash-chained audit service.
+
+## 📱 Mobile
+
+- [steward-android](https://github.com/Steward-GRC/steward-android): the native Android app.
+- [steward-ios](https://github.com/Steward-GRC/steward-ios): the native iOS app.
 
 ## 🤝 Contributing
 
