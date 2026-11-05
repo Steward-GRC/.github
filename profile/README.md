@@ -43,6 +43,7 @@ rules, single sign-on and second factors, and runs on any Kubernetes cluster.
 - [steward-ai](https://github.com/Steward-GRC/steward-ai): cited answers, drafting, review and summaries behind one provider interface.
 - [steward-gateway](https://github.com/Steward-GRC/steward-gateway): the GraphQL edge for the browser, with sessions, sign-in, first-run setup, the co-editing proxy and document extract.
 - [steward-web](https://github.com/Steward-GRC/steward-web): the staff and admin web apps, the docs guide and the UI kit.
+- [steward-mock-server](https://github.com/Steward-GRC/steward-mock-server): an in-memory mock of the whole gateway API, so the web and mobile apps run locally on invented data.
 
 ## 🔐 Identity, access and audit
 
