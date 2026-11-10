@@ -204,7 +204,9 @@ The `check` job (on a PR) runs two guards first, in every calling repo, with or 
     pseudo-version of a commit on `main`; real tags (`v0.1.0` and on) come at release, and a tagged
     version always passes. The commit is checked the way `pin-check.sh` checks a pin:
     `repos/Steward-GRC/<repo>/compare/<commit>...main` passes on `ahead` or `identical`, and
-    `behind`, `diverged` or a 404 fails. Require the owner's merge commit, never a PR head;
+    `behind`, `diverged` or a 404 fails. Require the owner's merge commit, never a PR head. A 404
+    is then told apart: if `repos/Steward-GRC/<repo>` also 404s, the repo no longer exists, and the
+    module is skipped with a `::warning` instead of failing;
   - an owner module at anything that isn't a semver tag: a malformed pseudo-version (short
     commit or timestamp, upper-case hex) or a branch name.
 
