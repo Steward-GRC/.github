@@ -12,7 +12,9 @@
 #     pin-check.sh asks it for proto pins:
 #       repos/Steward-GRC/<repo>/compare/<commit>...main
 #     passes on status "ahead" or "identical"; "behind", "diverged" and a 404
-#     fail;
+#     fail. The exception is a module whose repo no longer exists (a 404 on
+#     repos/Steward-GRC/<repo> too): it is skipped with a ::warning, because
+#     no commit can be checked and the module is on its way out;
 #   - an owner module at anything else that isn't a semver tag, such as a
 #     pseudo-version with a short commit or timestamp, or a branch name.
 # Third-party modules are left alone. Work against a local package checkout
@@ -40,6 +42,13 @@ on_main() {
   out="$(gh api "repos/$repo/compare/$commit...main?per_page=1" --jq .status 2>&1)" || rc=$?
   if ((rc != 0)); then
     if [[ "$out" == *"HTTP 404"* ]]; then
+      # A 404 on compare means no such commit or no such repo. Ask which.
+      local probe prc=0
+      probe="$(gh api "repos/$repo" --jq .name 2>&1)" || prc=$?
+      if ((prc != 0)) && [[ "$probe" == *"HTTP 404"* ]]; then
+        echo "::warning file=$mod,line=$n::$path is at a pseudo-version ($ver), but $repo no longer exists: skipped."
+        return 0
+      fi
       echo "::error file=$mod,line=$n::$path is at a pseudo-version ($ver): $repo has no commit $commit (compare returned 404)."
     else
       echo "::error file=$mod,line=$n::$path is at a pseudo-version ($ver): comparing $commit with $repo main failed: ${out//$'\n'/ }"

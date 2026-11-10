@@ -51,13 +51,15 @@ tip=abcdefabcdef
 pr_head=fedcbafedcba
 
 # The fake gh answers `gh api repos/<org>/<repo>/compare/<sha>...main?per_page=1 --jq .status`
-# and 404s on anything else, as the API does for an unknown repo or commit.
+# and 404s on anything else, as the API does for an unknown repo or commit. The
+# repos steward-authz, -core, -audit and -release exist; any other repo is gone.
 fake="$work/bin"
 mkdir -p "$fake"
 {
   echo '#!/usr/bin/env bash'
   echo '[[ "$1" == api ]] || exit 9'
   echo 'case "$2" in'
+  echo '  repos/Steward-GRC/steward-authz | repos/Steward-GRC/steward-core | repos/Steward-GRC/steward-audit | repos/Steward-GRC/steward-release) echo "${2##*/}" ;;'
   echo "  repos/Steward-GRC/steward-authz/compare/$on_main...main?per_page=1) echo ahead ;;"
   echo "  repos/Steward-GRC/steward-core/compare/$tip...main?per_page=1) echo identical ;;"
   echo "  repos/Steward-GRC/steward-audit/compare/$pr_head...main?per_page=1) echo diverged ;;"
@@ -164,7 +166,7 @@ go 1.26.6
 
 require (
 	github.com/Steward-GRC/steward-audit v0.1.1-0.20261005120000-$pr_head
-	github.com/Steward-GRC/steward-nosuch v0.0.0-20261005120000-$on_main
+	github.com/Steward-GRC/steward-core v0.0.0-20261005120000-$on_main
 	github.com/Steward-GRC/steward-authz v0.0.0-20261005120000-$on_main
 	github.com/Bugs5382/go-log v0.0.0-20261005120000-$on_main
 	github.com/Bugs5382/go-apperr v1.1.0
@@ -179,8 +181,8 @@ rc="$(run "$work/offmain" "$work/offmain.log")"
 expect_exit "owner pseudo-versions off main fail" 1 "$rc"
 expect_contains "a Steward-GRC commit off main fails" \
   "::error file=go.mod,line=6::github.com/Steward-GRC/steward-audit is at a pseudo-version (v0.1.1-0.20261005120000-$pr_head) whose commit isn't reachable from Steward-GRC/steward-audit main (compare status: diverged)." "$work/offmain.log"
-expect_contains "an unknown Steward-GRC repo or commit fails" \
-  "::error file=go.mod,line=7::github.com/Steward-GRC/steward-nosuch is at a pseudo-version (v0.0.0-20261005120000-$on_main): Steward-GRC/steward-nosuch has no commit $on_main (compare returned 404)." "$work/offmain.log"
+expect_contains "an unknown commit on an existing Steward-GRC repo fails" \
+  "::error file=go.mod,line=7::github.com/Steward-GRC/steward-core is at a pseudo-version (v0.0.0-20261005120000-$on_main): Steward-GRC/steward-core has no commit $on_main (compare returned 404)." "$work/offmain.log"
 expect_not_contains "a Steward-GRC commit on main isn't flagged" "::error file=go.mod,line=8::" "$work/offmain.log"
 expect_contains "a Bugs5382 pseudo-version fails, on main or not" \
   "::error file=go.mod,line=9::github.com/Bugs5382/go-log is at a pseudo-version (v0.0.0-20261005120000-$on_main). Require a tagged release" "$work/offmain.log"
@@ -194,6 +196,29 @@ expect_contains "a pseudo-version with an upper-case commit fails" \
 expect_contains "a branch name fails" \
   "::error file=go.mod,line=14::github.com/Steward-GRC/steward-branch is at a malformed version (main)" "$work/offmain.log"
 expect_not_contains "a third-party version is left alone" "golang.org/x/exp" "$work/offmain.log"
+
+# A module whose repo was deleted can't be checked: it is skipped with a
+# warning, and the rest of the file is still checked.
+mkdir -p "$work/gone"
+cat >"$work/gone/go.mod" <<GOMOD
+module github.com/Steward-GRC/steward-fixture
+
+go 1.26.6
+
+require (
+	github.com/Steward-GRC/steward-nosuch v0.0.0-20261005120000-$on_main
+	github.com/Steward-GRC/steward-core v0.0.0-20261005120000-$tip
+)
+GOMOD
+rc="$(run "$work/gone" "$work/gone.log")"
+expect_exit "a deleted repo is skipped" 0 "$rc"
+expect_contains "the skip is a warning naming the module" \
+  "::warning file=go.mod,line=6::github.com/Steward-GRC/steward-nosuch is at a pseudo-version (v0.0.0-20261005120000-$on_main), but Steward-GRC/steward-nosuch no longer exists: skipped." "$work/gone.log"
+expect_not_contains "a deleted repo is not an error" "::error" "$work/gone.log"
+expect_contains "other modules in the file are still checked" "Steward-GRC/steward-core $tip is on main (identical)" "$work/gone.log"
+printf 'module github.com/Steward-GRC/steward-fixture\n\ngo 1.26.6\n\nrequire github.com/Steward-GRC/steward-nosuch v0.0.0-20261005120000-%s\nrequire github.com/Steward-GRC/steward-core v0.0.0-20261005120000-%s\n' "$on_main" "$on_main" >"$work/gone/go.mod"
+rc="$(run "$work/gone" "$work/gone2.log")"
+expect_exit "a deleted repo does not hide a bad pin beside it" 1 "$rc"
 
 # A nested module is checked too; hidden directories (fetched protos, the
 # workflow's tools checkout) are not.
