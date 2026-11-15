@@ -49,11 +49,14 @@
 # On schedule or workflow_dispatch (job `refresh`), it points every stale pin
 # at the owner's main, reruns scripts/proto-generate.sh and opens (or updates)
 # one PR from the branch chore/proto-refs. Workflows don't start on a PR the
-# workflow token opens: a maintainer closes and reopens it to run CI. The org
+# workflow token opens: a maintainer closes and reopens it to run CI, unless the
+# caller passes the optional GitHub App secrets (secrets: inherit with the org
+# secrets PROTO_REFRESH_APP_ID and PROTO_REFRESH_APP_KEY mapped to app-id and
+# app-private-key), in which case the App opens the PR and CI starts on it. The org
 # setting "Allow GitHub Actions to create and approve pull requests" must be on.
 #
 # The logic lives in .github/scripts/proto-sync.sh. It takes no secrets beyond
-# the default GITHUB_TOKEN.
+# the default GITHUB_TOKEN and, optionally, the App secrets above.
 name: proto-sync
 
 on:
@@ -71,6 +74,13 @@ on:
         description: protoc-gen-go-grpc version the refresh regenerates with; match the repo's Build & Test.
         type: string
         default: v1.6.2
+    secrets:
+      app-id:
+        description: Optional GitHub App id. With app-private-key, the refresh pushes and opens its PR as the App, so CI starts on it.
+        required: false
+      app-private-key:
+        description: Optional private key of that GitHub App.
+        required: false
 
 env:
   BUF_VERSION: 1.73.0
@@ -130,9 +140,24 @@ jobs:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    env:
+      APP_ID: ${{ secrets.app-id }}
     steps:
+      # Events caused by the default token start no workflows, so a PR it opens
+      # gets no CI. With the optional App secrets the push and the PR come from
+      # the App instead; without them nothing changes.
+      - name: Mint the App token
+        id: app
+        if: ${{ env.APP_ID != '' }}
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.app-id }}
+          private-key: ${{ secrets.app-private-key }}
+
       - name: Check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          token: ${{ steps.app.outputs.token || github.token }}
 
       - name: Check out the proto-sync tools
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -189,7 +214,7 @@ jobs:
       - name: Open or update the PR
         if: steps.bump.outputs.changed == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app.outputs.token || github.token }}
           CHANGES: ${{ runner.temp }}/proto-sync-changes.md
           BASE: ${{ github.event.repository.default_branch }}
         run: |
@@ -207,7 +232,9 @@ jobs:
             echo
             cat "$CHANGES"
             echo
-            echo "CI doesn't start on a PR the workflow token opens: close and reopen this PR to run it."
+            if [ -z "${APP_ID:-}" ]; then
+              echo "CI doesn't start on a PR the workflow token opens: close and reopen this PR to run it."
+            fi
           } > "$body"
           if [ -n "$(gh pr list --head "$BRANCH" --state open --json number --jq '.[].number')" ]; then
             gh pr edit "$BRANCH" --title "$title" --body-file "$body"
